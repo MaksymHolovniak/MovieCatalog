@@ -1,0 +1,102 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id       Int    @id @default(autoincrement()) @map("user_id")
+  password String
+  email    String @unique
+
+  name       String          @unique
+  avatarPath String          @map("avatar_path")
+  role       String          @default("client")
+  reviews    Review[]
+  favorites  FavoriteMovie[]
+}
+
+model Movie {
+  movieId       Int             @id @default(autoincrement()) @map("movie_id")
+  name          String          @unique
+  slug          String          @unique
+  type          EnumMovieType
+  imagePath     String          @map("image_path")
+  trailer       String
+  year          Int
+  clarity       String
+  duration      Int?
+  rating        Float
+  description   String          @db.Text
+  country       String
+  releaseDate   String          @map("release_date")
+  reviews       Review[]
+  cast          MovieCast[]
+  genres        MovieGenre[]
+  favoriteMovie FavoriteMovie[]
+}
+
+model Review {
+  reviewId  Int      @id @default(autoincrement()) @map("review_id")
+  createdAt DateTime @default(now()) @map("created_at")
+  text      String
+
+  user    User  @relation(fields: [userId], references: [id])
+  userId  Int   @map("user_id")
+  movie   Movie @relation(fields: [movieId], references: [movieId], onDelete: Cascade, onUpdate: Cascade)
+  movieId Int   @map("movie_id")
+}
+
+model Genre {
+  genreId Int          @id @default(autoincrement()) @map("genre_id")
+  name    String       @unique
+  movies  MovieGenre[]
+}
+
+model Actor {
+  actorId Int         @id @default(autoincrement()) @map("actor_id")
+  name    String      @unique
+  movies  MovieCast[]
+}
+
+model MovieGenre {
+  id      Int @id @default(autoincrement())
+  movieId Int @map("movie_id")
+  genreId Int @map("genre_id")
+
+  movie Movie @relation(fields: [movieId], references: [movieId], onDelete: Cascade, onUpdate: Cascade)
+  genre Genre @relation(fields: [genreId], references: [genreId], onDelete: Cascade, onUpdate: Cascade)
+}
+
+model MovieCast {
+  id      Int @id @default(autoincrement())
+  movieId Int @map("movie_id")
+  actorId Int @map("actor_id")
+
+  movie Movie @relation(fields: [movieId], references: [movieId], onDelete: Cascade, onUpdate: Cascade)
+  actor Actor @relation(fields: [actorId], references: [actorId], onDelete: Cascade, onUpdate: Cascade)
+}
+
+model FavoriteMovie {
+  id      Int @id @default(autoincrement())
+  userId  Int @map("user_id")
+  movieId Int @map("movie_id")
+
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  movie Movie @relation(fields: [movieId], references: [movieId], onDelete: Cascade, onUpdate: Cascade)
+}
+
+enum EnumMovieType {
+  film
+  serial
+  cartoon
+}
